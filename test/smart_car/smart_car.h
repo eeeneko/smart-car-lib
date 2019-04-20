@@ -51,6 +51,10 @@ public:
         this->_speed = 200;
         this->_serialCmd = new char[8];
         t = millis();
+        this->_auto = false;
+
+        this->read_sensor_values();                      //读取初值 
+        this->calc_pid();                                //计算pid 
     };
 
     ~car(){
@@ -67,10 +71,21 @@ public:
 
     };
 
+    void adjust_cmd(){
+        if(this->_motor_left > 1) this->_motor_left = 1;
+        if(this->_motor_left < -1) this->_motor_left = -1;
+        if(this->_motor_right > 1) this->_motor_right = 1;
+        if(this->_motor_right < -1) this->_motor_right = -1;
+        
+    }
 
     void core(){
+        f_motor_left = _motor_left;
+        f_motor_right = _motor_right;
         reload_shift_reg(); //刷新传感器数据
         this->_serial_com();
+        if(this->_auto)this->_auto_run();
+        adjust_cmd();
         motor_set_PWM((int)((-this->_motor_left) * (float)_speed), (int)((-this->_motor_right) * (float)_speed));
     }
 
@@ -78,10 +93,21 @@ private:
     Adafruit_NeoPixel *_led;
     float _motor_left;
     float _motor_right;
+    float f_motor_left;
+    float f_motor_right;
     const char *_serialCmd;
     unsigned int _speed;
     String t_res;
     unsigned long t;
+    bool _auto;
+
+    float Kp = 10, Ki = 0.5, Kd = 0;                    //pid弯道参数参数 
+    float error = 0, P = 0, I = 0, D = 0, PID_value = 0;//pid直道参数 
+    float decide = 0;                                   //元素判断
+    float previous_error = 0, previous_I = 0;           //误差值 
+    int _sensor[5] = {0, 0, 0, 0, 0};    
+    int initial_motor_speed = 60;
+
 
     void _serial_com(){
 
@@ -94,6 +120,7 @@ private:
             t_to += (sensor.ir_right_1)?"1":"0";
             t_to += (sensor.ir_right_2)?"1":"0";
             t_to += (sensor.ir_right_3)?"1":"0";
+            t_to += PID_value;
             Serial.println(t_to);
 
             if(t_res == "Disconnnected!") return;
@@ -101,6 +128,7 @@ private:
             this->_adjust_left_motor(this->_serialCmd[0]);
             this->_adjust_right_motor(this->_serialCmd[1]);
             this->_adjust_speed(this->_serialCmd[2]);
+            this->_change_mode(this->_serialCmd[3]);
         }
 
     };
@@ -139,9 +167,140 @@ private:
         if(msg == 'C') this->_speed = 200;
         if(msg == 'D') this->_speed = 255;
     }
-    static void _send(){
+
+    void _change_mode(char msg){
+        if(msg == 'A') this->_auto = true;
+        if(msg == 'B') this->_auto = false;
+    }
+    void _auto_run(){
+        read_sensor_values();
+        calc_pid();
+        //this->_motor_left = (float)(initial_motor_speed + PID_value)/255;
+        //this->_motor_right = (float)(initial_motor_speed - PID_value)/255;
 
     }
+
+
+    void read_sensor_values(){
+
+      if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+          this->_motor_left = 1;
+          this->_motor_right = 1;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = -1;
+          this->_motor_left = .6;
+          this->_motor_right = .8;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 1;
+          this->_motor_left = .8;
+          this->_motor_right = .6;
+      }
+
+      else if(!sensor.ir_left_3 && sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = -2;
+          this->_motor_left = .3;
+          this->_motor_right = .5;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 2;
+          this->_motor_left = .5;
+          this->_motor_right = .3;
+      }
+
+      else if(sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = -3;
+          this->_motor_left = 0;
+          this->_motor_right = .5;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && sensor.ir_right_3){
+          error = 3;
+          this->_motor_left = .5;
+          this->_motor_right = 0;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && sensor.ir_left_1 && sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+          this->_motor_left = .6;
+          this->_motor_right = .8;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && sensor.ir_mid && sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+          this->_motor_left = .8;
+          this->_motor_right = .6;
+      }
+
+      else if(!sensor.ir_left_3 && sensor.ir_left_2 && sensor.ir_left_1 && sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+          this->_motor_left = 0;
+          this->_motor_right = .5;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && sensor.ir_mid && sensor.ir_right_1 && sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+          this->_motor_left = .5;
+          this->_motor_right = 0;
+      }
+
+      else if(!sensor.ir_left_3 && sensor.ir_left_2 && sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+          this->_motor_left = .3;
+          this->_motor_right = .6;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && sensor.ir_right_1 && sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+          this->_motor_left = .6;
+          this->_motor_right = .3;
+      }
+
+      else if(sensor.ir_left_3 && sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+          this->_motor_left = 0;
+          this->_motor_right = .4;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && sensor.ir_right_2 && sensor.ir_right_3){
+          error = 0;
+          this->_motor_left = .4;
+          this->_motor_right = 0;
+      }
+/*
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+      }
+
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 0;
+      }
+*/
+
+      else{
+          this->_motor_left = this->f_motor_left;
+          this->_motor_right = this->f_motor_right;
+      }
+    }
+
+      void calc_pid()
+      {
+        P = error;
+        I = I + error;
+        D = error - previous_error;
+       
+        PID_value = (Kp * P) + (Ki * I) + (Kd * D);
+       
+        previous_error = error;
+
+        error = 0;
+      }
+
 
 };
 
