@@ -183,66 +183,99 @@ private:
 
     void read_sensor_values(){
 
+      if(sensor.ir_left_3){
+          error = -1;
+          this->_motor_left = 0;
+          this->_motor_right = .8;
+      }else if(sensor.ir_right_3){
+          error = -1;
+          this->_motor_left = .8;
+          this->_motor_right = 0;
+      }else if(sensor.ir_mid){
+          error = 0;
+          this->_motor_left = 1;
+          this->_motor_right = 1;
+      }else if(sensor.ir_left_1){
+          error = -1;
+          this->_motor_left = .7;
+          this->_motor_right = 1;
+      }else if(sensor.ir_right_1){
+          error = 1;
+          this->_motor_left = 1;
+          this->_motor_right = .7;
+      }else if(sensor.ir_left_2){
+          error = -1;
+          this->_motor_left = .6;
+          this->_motor_right = 1;
+      }else if(sensor.ir_right_2){
+          error = -1;
+          this->_motor_left = .6;
+          this->_motor_right = 1;
+      }
+
+      
+      /*
+      //0001000
       if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
           error = 0;
           this->_motor_left = 1;
           this->_motor_right = 1;
       }
-
+      //0010000
       else if(!sensor.ir_left_3 && !sensor.ir_left_2 && sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
           error = -1;
-          this->_motor_left = .6;
-          this->_motor_right = .8;
+          this->_motor_left = .4;
+          this->_motor_right = .7;
       }
-
+      //0000100
       else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
           error = 1;
-          this->_motor_left = .8;
-          this->_motor_right = .6;
+          this->_motor_left = .7;
+          this->_motor_right = .4;
       }
-
+      //0100000
       else if(!sensor.ir_left_3 && sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
           error = -2;
-          this->_motor_left = .3;
-          this->_motor_right = .5;
-      }
-
-      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && sensor.ir_right_2 && !sensor.ir_right_3){
-          error = 2;
-          this->_motor_left = .5;
+          this->_motor_left = .1;
           this->_motor_right = .3;
       }
-
+      //0000010
+      else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && sensor.ir_right_2 && !sensor.ir_right_3){
+          error = 2;
+          this->_motor_left = .3;
+          this->_motor_right = .1;
+      }
+      //1000000
       else if(sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
           error = -3;
           this->_motor_left = 0;
           this->_motor_right = .5;
       }
-
+      //0000001
       else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && sensor.ir_right_3){
           error = 3;
           this->_motor_left = .5;
           this->_motor_right = 0;
       }
-
+   /*   //0011000
       else if(!sensor.ir_left_3 && !sensor.ir_left_2 && sensor.ir_left_1 && sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
           error = 0;
           this->_motor_left = .6;
           this->_motor_right = .8;
       }
-
+      //0001100
       else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && sensor.ir_mid && sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
           error = 0;
           this->_motor_left = .8;
           this->_motor_right = .6;
       }
-
+      //0111000
       else if(!sensor.ir_left_3 && sensor.ir_left_2 && sensor.ir_left_1 && sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
           error = 0;
           this->_motor_left = 0;
           this->_motor_right = .5;
       }
-
+      //0001110
       else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && sensor.ir_mid && sensor.ir_right_1 && sensor.ir_right_2 && !sensor.ir_right_3){
           error = 0;
           this->_motor_left = .5;
@@ -272,6 +305,7 @@ private:
           this->_motor_left = .4;
           this->_motor_right = 0;
       }
+*/
 /*
       else if(!sensor.ir_left_3 && !sensor.ir_left_2 && !sensor.ir_left_1 && !sensor.ir_mid && !sensor.ir_right_1 && !sensor.ir_right_2 && !sensor.ir_right_3){
           error = 0;
