@@ -182,33 +182,42 @@ private:
 
 
     void read_sensor_values(){
+      static unsigned int p = 0;
+      static int e = 0;
 
       if(sensor.ir_left_3){
-          error = -1;
+          e = -3;
+          p = 0;
           this->_motor_left = 0;
           this->_motor_right = .8;
       }else if(sensor.ir_right_3){
-          error = -1;
+          e = 3;
+          p = 0;
           this->_motor_left = .8;
           this->_motor_right = 0;
       }else if(sensor.ir_mid){
-          error = 0;
+          e = 0;
+          p = 0;
           this->_motor_left = 1;
           this->_motor_right = 1;
       }else if(sensor.ir_left_1){
-          error = -1;
+          e = -1;
+          p = 0;
           this->_motor_left = .7;
           this->_motor_right = 1;
       }else if(sensor.ir_right_1){
-          error = 1;
+          e = 1;
+          p = 0;
           this->_motor_left = 1;
           this->_motor_right = .7;
       }else if(sensor.ir_left_2){
-          error = -1;
+          e = -2;
+          p = 0;
           this->_motor_left = .6;
           this->_motor_right = 1;
       }else if(sensor.ir_right_2){
-          error = -1;
+          e = 2;
+          p = 0;
           this->_motor_left = .6;
           this->_motor_right = 1;
       }
@@ -319,7 +328,14 @@ private:
       else{
           this->_motor_left = this->f_motor_left;
           this->_motor_right = this->f_motor_right;
+          p++;
+
+          if(p > 600){
+              this->_motor_left = -0.5;
+               this->_motor_right = -0.5;
+          }
       }
+      error = e;
     }
 
       void calc_pid()
